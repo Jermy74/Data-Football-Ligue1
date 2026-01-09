@@ -1,46 +1,29 @@
-Mon Portfolio
+Projet Données Ligue 1 - Saison 2015/2016
+  Description
+Ce projet propose une analyse complète des données de la Ligue 1 française pour la saison 2015/2016. Il contient l'ensemble des statistiques des matchs, des équipes et des joueurs individuels sur l'ensemble de la saison.
 
-Bienvenue sur le dépôt de mon portfolio personnel !
-Ce portfolio a été conçu pour présenter mes projets, mes expériences et mes compétences, ainsi que pour permettre de télécharger mon CV facilement.
+  Contenu des données
+Le projet comprend trois catégories principales de données :
+Matchs
 
-Description
+Résultats de tous les matchs de la saison
+Scores, dates et lieux des rencontres
+Statistiques de jeu (possession, tirs, corners, etc.)
 
-Mon portfolio est une application web épuré et moderne qui permet de :
+Équipes
 
-- Découvrir mon profil et télécharger mon CV.
+Classement et performances de chaque équipe
+Statistiques offensives et défensives
+Évolution au cours de la saison
 
-- Visualiser les projets que j’ai réalisés.
+Joueurs
 
-- Explorer mes expériences professionnelles et mes compétences techniques.
+Statistiques individuelles des joueurs
+Buts, passes décisives, cartons
+Performances par match et sur la saison complète
 
-Il est conçu pour être responsive, facile à naviguer, et mettre en valeur mes réalisations de manière claire.
+  Objectifs du projet
 
-Sections du Portfolio
-
-. Accueil
-
-Une introduction personnelle.
-
-Un bouton pour télécharger mon CV rapidement.
-
-. Projets
-
-Une galerie de mes projets réalisés.
-
-Chaque projet est présenté avec une description, les technologies utilisées et un lien vers le projet ou le code source.
-
-. Expériences et compétences
-
-Mes expériences professionnelles avant ma réorientation dans l'informatique.
-
-Mes skills techniques (ex : HTML, CSS, JavaScript, React, Tailwind, etc.).
-
-Technologies utilisées :
-
-React – pour la structure et l’interactivité de l’application.
-
-Tailwind CSS – pour un design moderne, rapide et responsive.
-
-JavaScript / JSX – pour la logique front-end.
-
-Vite – pour le bundling et le développement local.
+Analyser les performances de la saison 2015/2016
+Identifier les tendances et les modèles de jeu
+Fournir des visualisations et des insights sur les données

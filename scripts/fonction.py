@@ -125,3 +125,57 @@ def stat_team(df, team_name):
     stats['Arrêts'] = len(nbr_save)
 
     return stats
+
+def calcul_classement(df_matchs):
+    stats = {}
+
+    for i, match in df_matchs.iterrows():
+        equipe_dom = match['equipe_domicile']
+        equipe_ext = match['equipe_exterieur']
+        buts_dom = match['buts_domicile']
+        buts_ext = match['buts_exterieur']
+
+        for equipe in [equipe_dom, equipe_ext]:
+            if equipe not in stats:
+                stats[equipe] = {
+                    'Equipe': equipe,
+                    'Pts' : 0,
+                    'J': 0,
+                    'V': 0,
+                    'N': 0,
+                    'D': 0,
+                    'BP': 0,
+                    'BC': 0
+                }
+        stats[equipe_dom]['J'] += 1
+        stats[equipe_ext]['J'] += 1
+
+        stats[equipe_dom]['BP'] += buts_dom
+        stats[equipe_dom]['BC'] += buts_ext
+        stats[equipe_ext]['BP'] += buts_ext
+        stats[equipe_ext]['BC'] += buts_dom
+
+        if buts_dom > buts_ext:
+            stats[equipe_dom]['Pts'] += 3
+            stats[equipe_dom]['V'] += 1
+            stats[equipe_ext]['D'] += 1
+        elif buts_dom < buts_ext:
+            stats[equipe_ext]['Pts'] += 3
+            stats[equipe_ext]['V'] += 1
+            stats[equipe_dom]['D'] += 1
+        else:
+            stats[equipe_dom]['Pts'] += 1
+            stats[equipe_ext]['Pts'] += 1
+            stats[equipe_dom]['N'] += 1
+            stats[equipe_ext]['N'] += 1
+
+    df_classement = pd.DataFrame(stats.values())
+
+    df_classement['Diff'] = df_classement['BP'] - df_classement['BC']
+    
+    df_classement = df_classement.sort_values(by=['Pts', 'Diff', 'BP'], ascending = False)
+
+    df_classment=df_classement.reset_index(drop=True)
+    df_classement = df_classement.index + 1 
+
+    return df_classement

@@ -1,0 +1,14 @@
+services:
+  statsbomb:
+    build: ./
+    ports:
+    - "8888:8888"
+    volumes:
+      - ./data:/app/data
+      - ./notebooks:/app/notebooks
+      - ./scripts:/app/scripts
+      - ./outputs:/app/outputs
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+    restart: unless-stopped
+    

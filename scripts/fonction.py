@@ -2,6 +2,7 @@ import pandas as pd
 import json 
 import glob
 import os
+from pathlib import Path
 
 def load_match(filepath):
     with open(filepath, 'r', encoding='utf-8') as f:
@@ -75,21 +76,31 @@ def stat_team(df, team_name):
 
     #Fautes
     nbr_faute = df_team[df_team['type.name'] == 'Foul Committed']
+    foul_won = df[df['type.name'] == 'Foul Won']
+
     stats['Fautes commises'] = len(nbr_faute)
+    if 'foul_committed.card.name' in df_team.columns:
+        stats['Cartons jaunes'] = len(df_team[df_team['foul_committed.card.name'] == 'Yellow Card'])
+        stats['Cartons rouges'] = len(df_team[df_team['foul_committed.card.name'].isin(['Red Card', 'Second Yellow'])])
+    else:
+        stats['Cartons jaunes'] = 0
+        stats['Cartons rouges'] = 0
+    stats['Fautes subies'] = len(foul_won)
 
     if 'foul_won.penalty' in df_team.columns:
         nbr_penalty = df_team[df_team['foul_won.penalty'] == True]
         stats['Penalty'] = len(nbr_penalty)
     else:
         stats['Penalty'] = 0
-    
-    
 
     #Duels
     nbr_duel = df_team[df_team['type.name'] == 'Duel']
     nbr_duel_nettoyé = nbr_duel[nbr_duel['duel.outcome.name'].notna()]
     nbr_duelaerienper = len(nbr_duel[nbr_duel['duel.type.name'] == 'Aerial Lost'])
     nbr_duelaeriengag = len(df_team[(df_team.get('pass.aerial_won', pd.Series([False]*len(df_team))) == True) | (df_team.get('clearance.aerial_won', pd.Series([False]*len(df_team))) == True) | (df_team.get('shot.aerial_won', pd.Series([False]*len(df_team))) == True)])
+    tacle = nbr_duel[nbr_duel['duel.type.name'] == 'Tackle']
+    tacle_réussis = tacle[tacle['duel.outcome.name'].isin(['Success In Play', 'Won', 'Success Out'])]
+    tacle_réussie_ratio = round(len(tacle_réussis)/len(tacle)*100,1) if len(tacle) > 0 else 0
 
     stats['Duel totaux'] = len(nbr_duel)
     stats['Duel gagnés (%)'] = round(len(nbr_duel_nettoyé[nbr_duel_nettoyé['duel.outcome.name'].isin(['Won','Success','Success In Play', 'Success Out'])])/len(nbr_duel_nettoyé)*100,1) if len(nbr_duel_nettoyé[nbr_duel_nettoyé['duel.outcome.name'].isin(['Won','Success','Success In Play', 'Success Out'])]) > 0 else 0
@@ -97,6 +108,10 @@ def stat_team(df, team_name):
     stats['Duel aériens'] = nbr_duelaeriengag + nbr_duelaerienper
     stats['Duel aérien gagnés (%)'] = round(nbr_duelaeriengag/(nbr_duelaeriengag + nbr_duelaerienper)*100,1) if nbr_duelaeriengag > 0 else 0
     
+    stats['Nombre de tacle'] = len(tacle)
+    stats['Nombre de tacle réussi'] = len(tacle_réussis)
+    stats['Pourcentage passe réussi (%)'] = tacle_réussie_ratio
+
     #Dribbles
     nbr_dribble = df_team[df_team['type.name'] == 'Dribble']
     nbr_dribblesucc = nbr_dribble[nbr_dribble['dribble.outcome.name'] == 'Complete']
@@ -108,8 +123,9 @@ def stat_team(df, team_name):
     #Actions défensives
     nbr_interception = df_team[df_team['interception.outcome.name'].isin(['Success', 'Success In Play', 'Success Out', 'Won'])]
     nbr_clear = df_team[df_team['type.name'] == 'Clearance']
+    recuperation_total = df_team[df_team['type.name'] == 'Ball Recovery']
+    recuperation_reussi = recuperation_total[recuperation_total['ball_recovery.recovery_failure'].isna()]
    
-
     stats['Interceptions'] = len(nbr_interception)
     stats['Dégagement'] = len(nbr_clear)
 
@@ -118,13 +134,53 @@ def stat_team(df, team_name):
         stats['Bloc'] = len(nbr_block)
     else :
         stats['Bloc'] = 0
-        
+    
+    stats['Récupération'] = len(recuperation_reussi)
+    
     #Arrêts
     nbr_save = df_team[df_team['goalkeeper.type.name'] == 'Shot Saved']
-
+    df_team_adv = df[df['team.name'] != team_name]
+    tirs_encaisse = df_team_adv[df_team_adv['type.name'] == 'Shot']
+    tirs_cadre_encaisse = tirs_encaisse[tirs_encaisse['shot.outcome.name'].isin(['Goal', 'Saved'])]
+    buts_encaisse = tirs_encaisse[tirs_encaisse['shot.outcome.name'] == 'Goal']
+    clean_sheet = 0 if len(buts_encaisse) > 0 else 1
+    
     stats['Arrêts'] = len(nbr_save)
+    stats['Tirs subis'] = len(tirs_encaisse)
+    stats['Tirs cadrés subis'] = len(tirs_cadre_encaisse)
+    stats['Buts encaissés'] = len(buts_encaisse)
+    stats['Clean sheet'] = clean_sheet
 
     return stats
+
+def stat_match(filepath):
+    df = load_match(filepath)
+    equipes = df[df['type.name'] == 'Starting XI']['team.name'].tolist()
+
+    match_id = Path(filepath).stem
+    
+    resultat =[]
+    for equipe in equipes :
+        stats = stat_team(df, equipe)
+        stats['match_ID'] = match_id
+        resultat.append(stats)
+
+    return resultat
+
+def stat_tous_matchs(dossier_path):
+    dossier = Path(dossier_path)
+    fichiers = list(dossier.glob('*.json'))
+
+    tous_resultat = []
+
+    for fichier in fichiers:
+        try:
+            resultats = stat_match(fichier)
+            tous_resultat.extend(resultats)
+        except Exception as e:
+            print (f'Erreur sur {fichier.name}: {e}')
+
+    return pd.DataFrame(tous_resultat)
 
 def calcul_classement(df_matchs):
     stats = {}
@@ -175,7 +231,7 @@ def calcul_classement(df_matchs):
     
     df_classement = df_classement.sort_values(by=['Pts', 'Diff', 'BP'], ascending = False)
 
-    df_classment=df_classement.reset_index(drop=True)
-    df_classement = df_classement.index + 1 
+    df_classement = df_classement.reset_index(drop=True)
+    df_classement.index = df_classement.index + 1 
 
     return df_classement

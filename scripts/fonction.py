@@ -182,6 +182,108 @@ def stat_tous_matchs(dossier_path):
 
     return pd.DataFrame(tous_resultat)
 
+def stat_player(df, player_name):
+    df_player = df[df['player.name'] == player_name]
+    df_team = df_player['team.name'].unique()
+    team_name = df_team[0]
+
+    stats = {'Joueurs' : player_name, 'Equipe' : team_name}
+
+    #Passes
+    nbre_passes = df_player[df_player['type.name'] == 'Pass']
+    passes_reussies = nbre_passes[nbre_passes['pass.outcome.name'].isna()]
+    passes_pourcentage = round(len(passes_reussies)/len(nbre_passes)*100,1) if len(nbre_passes) > 0 else 0
+    
+    stats['Passes'] = len(nbre_passes)
+    stats['Passes réussies'] = len(passes_reussies)
+    stats['Passes réussies (%)'] = len(passes_pourcentage)
+
+    right_foot_pass = nbre_passes[nbre_passes['pass.body_part.name'] == 'Right Foot']
+    left_foot_pass = nbre_passes[nbre_passes['pass.body_part.name'] == 'Left Foot']
+    head_pass = nbre_passes[nbre_passes['pass.body_part.name'] == 'Head']
+    right_foot_pass_success = right_foot_pass[right_foot_pass['pass.outcome.name'].isna()]
+    left_foot_pass_success = left_foot_pass[left_foot_pass['pass.outcome.name'].isna()]
+    head_pass_success = head_pass[head_pass['pass.outcome.name'].isna()]
+
+    stats['Passes pied droit'] = len(right_foot_pass)
+    stats['Passes réussies pied droit'] = len(right_foot_pass_success)
+    stats['Passes pied gauche'] = len(left_foot_pass)
+    stats['Passes réussies pied gauche'] = len(left_foot_pass_success)
+    stats['Passes tête'] = len(head_pass)
+    stats['Passes réussies tête'] = len(head_pass_success)
+
+    if 'pass.goal-assist' in df_player.columns:
+        passes_décisives = nbre_passes[nbre_passes['pass.goal-assist'] == True]
+        stats['Passes décisives'] = len(passes_décisives)
+    else: 
+        print(0)
+
+    passes_courte = nbre_passes[nbre_passes['pass.length']< 40]
+    passes_longues = nbre_passes[nbre_passes['pass.length'] >= 40]
+    passes_courtes_réussies = passes_courte[passes_courte['pass.outcome.name'].isna()]
+    passes_longues_réussies = passes_longues[passes_longues['pass.outcome.name'].isna()]
+
+    stats['Passes courtes'] = len(passes_courte)
+    stats['Passes longues'] = len(passes_longues)
+    stats['Passes courtes réussies'] = len(passes_courtes_réussies)
+    stats['Passes longues réussies'] = len(passes_longues_réussies)
+
+    #Tirs
+
+    tirs = df_player[df_player['type.name'] == 'Shot']
+    tirs_pied_droit = tirs[tirs['shot.body_part.name'] == 'Right Foot']
+    tirs_pied_gauche = tirs[tirs['shot.body_part.name'] == 'Left Foot']
+    tirs_tete = tirs[tirs['shot.body_part.name'] == 'Head']
+    tirs_autre = tirs[tirs['shot.body_part.name'] == 'Other']
+
+    stats['Tirs'] = len(tirs)
+    stats['Tirs pied droit'] = len(tirs_pied_droit)
+    stats['Tirs pied gauche'] = len(tirs_pied_gauche)
+    stats['Tirs tête'] = len(tirs_tete)
+    stats['Tirs autre'] = len(tirs_autre)
+
+    tirs_cadrés = tirs[tirs['shot.outcome.name'].isin(['Goal', 'Saved', 'Saved To Post'])]
+    tirs_pied_droit_cadrés = tirs_pied_droit[tirs_pied_droit['shot.outcome.name'].isin(['Goal', 'Saved', 'Saved To Post'])]
+    tirs_pied_gauche_cadrés = tirs_pied_gauche[tirs_pied_gauche['shot.outcome.name'].isin(['Goal', 'Saved', 'Saved To Post'])]
+    tirs_tete_cadrés = tirs_tete[tirs_tete['shot.outcome.name'].isin(['Goal', 'Saved', 'Saved To Post'])]
+    tirs_autre_cadrés = tirs_autre[tirs_autre['shot.outcome.name'].isin(['Goal', 'Saved', 'Saved To Post'])]
+    stats['Tirs cadrés'] = len(tirs_cadrés)
+    stats['Tirs cadrés pied droit'] = len(tirs_pied_droit_cadrés)
+    stats['Tirs cadrés pied gauche'] = len(tirs_pied_gauche_cadrés)
+    stats['Tirs cadrés tête'] = len(tirs_tete_cadrés)
+    stats['Tirs cadrés autre'] = len(tirs_autre_cadrés)
+
+    buts = tirs[tirs['shot.outcome.name'] == 'Goal']
+    buts_pied_droit = buts[buts['shot.body_part.name'] == 'Right Foot']
+    buts_pied_gauche = buts[buts['shot.body_part.name'] == 'Left Foot']
+    buts_tete = buts[buts['shot.body_part.name'] == 'Head']
+    buts_autre = buts[buts['shot.body_part.name'] == 'Other']
+    stats['Buts'] = len(buts)
+    stats['Buts pied droit'] = len(buts_pied_droit)
+    stats['Buts pied gauche'] = len(buts_pied_gauche)
+    stats['Buts tête'] = len(buts_tete)
+    stats['Buts autre'] = len(buts_autre)
+
+    xG = tirs['shot.statsbomb_xg']
+    xG_total = round(xG.sum(),2)
+    stats['xG'] = xG_total
+
+    #Dribbles
+
+    dribbles = df_player[df_player['type.name'] == 'Dribble']
+    dribbles_reussis = dribbles[dribbles['dribble.outcome.name'] == 'Complete']
+    dribbles_reussis_pourcentage = round(len(dribbles_reussis)/len(dribbles)*100,1) if len(dribbles) > 0 else 0
+    stats['Dribbles'] = len(dribbles)
+    stats['Dribbles réussis'] = len(dribbles_reussis)
+    stats['Dribbles pourcentage'] = dribbles_reussis_pourcentage
+
+    #Interception
+    interception = df_player[df_player['interception.outcome.name'].isin(['Success', 'Won','Success In Play', 'Success Out'])]
+    stats['Interceptions'] = len(interception)
+
+    #Duels
+    
+    return stats
 def calcul_classement(df_matchs):
     stats = {}
 
